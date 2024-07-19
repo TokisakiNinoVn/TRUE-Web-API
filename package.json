@@ -1,0 +1,19 @@
+{
+  "name": "true-web-api",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/TokisakiNinoVn/TRUE-Web-API.git"
+  },
+  "author": "TokisakiNinoVn",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/TokisakiNinoVn/TRUE-Web-API/issues"
+  },
+  "homepage": "https://github.com/TokisakiNinoVn/TRUE-Web-API#readme"
+}
