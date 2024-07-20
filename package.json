@@ -15,5 +15,8 @@
   "bugs": {
     "url": "https://github.com/TokisakiNinoVn/TRUE-Web-API/issues"
   },
-  "homepage": "https://github.com/TokisakiNinoVn/TRUE-Web-API#readme"
+  "homepage": "https://github.com/TokisakiNinoVn/TRUE-Web-API#readme",
+  "dependencies": {
+    "express": "^4.19.2"
+  }
 }
