@@ -1,0 +1,13 @@
+const httpConstants = require('http2').constants;
+
+const HTTP_STATUS = Object.freeze({
+  OK: httpConstants.HTTP_STATUS_OK,
+  BAD_REQUEST: httpConstants.HTTP_STATUS_BAD_REQUEST,
+  UNAUTHORIZED: httpConstants.HTTP_STATUS_UNAUTHORIZED,
+  NOT_FOUND: httpConstants.HTTP_STATUS_NOT_FOUND,
+  SERVICE_UNAVAILABLE: httpConstants.HTTP_STATUS_SERVICE_UNAVAILABLE,
+  INTERNAL_SERVER_ERROR: httpConstants.HTTP_STATUS_INTERNAL_SERVER_ERROR,
+  VERSION_NOT_SUPPORTED: httpConstants.HTTP_STATUS_CREATED
+})
+
+module.exports = { HTTP_STATUS }
