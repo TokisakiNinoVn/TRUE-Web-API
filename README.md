@@ -29,34 +29,29 @@ cd
 
 3. Cài đặt các dependencies:
 ```
-npm install
+npm install express mongoose env nodemon
 ```
 
-4. Tạo file `.env` trong thư mục gốc của dự án và thêm các biến môi trường sau:
+4. Khởi động server:
 ```
-MONGODB_URI=mongodb://localhost:27017/room-finder
-PORT=3000
-```
-
-5. Khởi động server:
-```
-npm start
+npm run start
 ```
 
-Lúc này, API sẽ được chạy trên địa chỉ `http://localhost:3000`.
+Lúc này, API sẽ được chạy trên địa chỉ `____________`.
 
-## Sử dụng API
+
+
+## Sử dụng API (Tạm thời chưa có)
 
 API cung cấp các endpoint sau:
-
 1. **Tìm kiếm phòng trọ/căn hộ mini**:
    - Endpoint: `GET /rooms`
    - Tham số: `location`, `type`, `minPrice`, `maxPrice`
-   - Ví dụ: `http://localhost:3000/rooms?location=Hanoi&type=apartment&minPrice=500000&maxPrice=1000000`
+   - Ví dụ: `____________/rooms?location=Hanoi&type=apartment&minPrice=500000&maxPrice=1000000`
 
 2. **Xem chi tiết phòng trọ/căn hộ mini**:
    - Endpoint: `GET /rooms/:id`
-   - Ví dụ: `http://localhost:3000/rooms/60a1b2c3d4e5f6g7h8i9j0`
+   - Ví dụ: `____________/rooms/60a1b2c3d4e5f6g7h8i9j0`
 
 3. **Thêm mới phòng trọ/căn hộ mini**:
    - Endpoint: `POST /rooms`
@@ -74,7 +69,7 @@ Bạn có thể sử dụng các công cụ như Postman hoặc cURL để test 
 ## Lưu ý
 
 - Đảm bảo MongoDB đang chạy trên máy của bạn trước khi khởi động server.
-- Tài liệu API chi tiết có thể được tìm thấy trong file `docs/api.md`.
+- Tài liệu API chi tiết có thể được tìm thấy trong file `____`.
 - Nếu gặp bất kỳ vấn đề nào, hãy tạo issue trên GitHub hoặc liên hệ với nhóm phát triển.
 
 Chúc bạn sử dụng API thành công!
