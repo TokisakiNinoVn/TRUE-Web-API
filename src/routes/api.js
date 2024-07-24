@@ -15,7 +15,7 @@ const { validateClientVersion } = require('@app/middlewares/version-middleware')
 app.use(validateClientVersion);
 
 // Cache router
-app.use('/cache', CacheRouter);
+// app.use('/cache', CacheRouter);
 
 // Define public APIs, Any client can invoke these without authentication
 app.use('/public', publicApi);
