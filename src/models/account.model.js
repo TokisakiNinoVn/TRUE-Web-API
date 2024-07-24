@@ -3,11 +3,6 @@ const mongoosePaginate = require('mongoose-paginate-v2');
 
 const AccountSchema = new mongoose.Schema(
 {
-    // userid: {
-    //     type: mongoose.Schema.Types.ObjectId,
-    //     required: true,
-    //     unique: true
-    // },
     username: {
         type: String,
         required: [true, "Please fill your user name"],
@@ -24,8 +19,9 @@ const AccountSchema = new mongoose.Schema(
         required: true
     },
     status: {
-        type: Boolean,
-        required: true
+        type: String,
+        required: true,
+        default: "offline"
     },
     active: {
         type: Boolean,
