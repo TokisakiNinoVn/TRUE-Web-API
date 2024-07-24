@@ -1,10 +1,8 @@
-//const jwt = require('jsonwebtoken');
+const jwt = require('jsonwebtoken');
 const { Account } = require('@app/models');
 const AppError = require('@app/utils/app-error');
-const jwt = require("jsonwebtoken");
 const { HTTP_STATUS } = require('@app/constants/status-code');
 const { LoginSchema } = require('./auth.validation');
-
 
 const createToken = async userInfo => {
   return jwt.sign({
@@ -15,18 +13,17 @@ const createToken = async userInfo => {
 };
 
 exports.login = async (req, res, next) => {
-
   try {
-    const userInfo = { username, password } = req.body;
+    const { username, password } = req.body;
 
     // Bước 1: validate dữ liệu đăng nhập
-    const { error } = LoginSchema.validate(userInfo);
+    const { error } = LoginSchema.validate({ username, password });
     if (error) {
       return next(new AppError(HTTP_STATUS.BAD_REQUEST, 'Bad Request', `Validation error: ${error.details.map(x => x.message).join(', ')}`), req, res, next);
     }
     
     // Bước 2: Kiểm tra thông tin username và password trong DB
-    const userDB = await Account.findOne({ username }).select("+password").populate("roles userInfo");
+    const userDB = await Account.findOne({ username }).select("+password").populate("role userInfor");
     if (!userDB) {
       return next(new AppError(HTTP_STATUS.BAD_REQUEST, "failed", "Tài khoản không tồn tại!"), req, res, next);
     }
@@ -37,22 +34,18 @@ exports.login = async (req, res, next) => {
     }
 
     // Bước 4: Kiểm tra xem tài khoản còn đang được kích hoạt không?
-    if (userDB && userDB?.active == false) {
+    if (!userDB.active) {
       return next(new AppError(HTTP_STATUS.BAD_REQUEST, "failed", "Tài khoản chưa được kích hoạt. Liên hệ với BQT để kích hoạt tài khoản"), req, res, next);
     }
 
     // Bước 5: Tất cả đều Ok thì cấp token và thông báo đăng nhập thành công.
     const userLoginedData = {
       id: userDB.id,
-      username: username,
-      // roleId: userDB?.role?._id,
-      // rolename: userDB?.role?.name,
-      fullname: userDB?.userInfo?.fullname
+      username,
+      fullname: userDB.userInfor?.fullname
     }
     const token = await createToken(userLoginedData);
-    // Remove the password from the output 
-    userInfo.password = undefined;
-
+    
     res.status(HTTP_STATUS.OK).json({
       status: 'success',
       token,
@@ -65,30 +58,16 @@ exports.login = async (req, res, next) => {
 };
 
 exports.logout = async (req, res, next) => {
-  //Destroy token:  make the token be invalid.
-  /* let jti = req.jwtDecoded.jti;
-  try {
-    await jwtr.destroy(jti);
-    res.status(200).json({
-      status: 'success',
-      message: 'Logout successed!'
-    })
-  } catch (err) {
-    next(err);
-  } */
-  const token  = req.headers["x-access-token"];
+  const token = req.headers["x-access-token"];
   return res.status(HTTP_STATUS.OK).json({
     status: 'success',
     token,
     message: 'Đăng xuất thành công.'
-  })
-
+  });
 }
 
 exports.signup = async (req, res, next) => {
   try {
-
-    //1) Validate user information after pre-process in middleware: username, password, email.
     let {
       username,
       password,
@@ -99,36 +78,38 @@ exports.signup = async (req, res, next) => {
       active = false
     } = req.body;
 
-    // Check the username already exist or not
-    const userDB = await User.findOne({ username }).select("+username");
+    // Check if username already exists
+    const userDB = await Account.findOne({ username }).select("+username");
     if (userDB) {
       return next(new AppError(HTTP_STATUS.BAD_REQUEST, "failed", "Tài khoản đã tồn tại. Hãy thử đăng ký tài khoản khác."), req, res, next);
     }
 
-    //2) Save user to DB
-    const user = await User.create({
-      username: username,
-      password: password,
-      name: name,
-      email: email,
-      phone: phone,
-      role: role,
-      active: active
+    // Save user to DB
+    const user = await Account.create({
+      username,
+      password,
+      role,
+      active,
+      userInfor: { // Assuming userInfor needs to be created/assigned here
+        name,
+        email,
+        phone
+      }
     });
 
-    //3) Create token and send jwt to client
+    // Create token and send jwt to client
     const userData = {
       id: user.id,
-      username: username,
+      username,
       role: user.role
     }
 
     const token = await createToken(userData);
 
-    //Remove the password from the output
+    // Remove the password from the output
     user.password = undefined;
 
-    res.status(200).json({
+    res.status(HTTP_STATUS.OK).json({
       status: 'success',
       token,
       data: user
@@ -137,5 +118,4 @@ exports.signup = async (req, res, next) => {
   } catch (err) {
     next(err);
   }
-
 };

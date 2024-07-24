@@ -44,9 +44,7 @@ app.use('/api', limiter);
 
 // Declare upload folder
 app.use(express.static('public'));
-
-// // Use a fixed route prefix
-// app.use('/api/', require('./routes/api'));
+app.use('/api/', require('./routes/api'));
 
 // Handle undefined Routes
 app.use('*', (req, res, next) => {

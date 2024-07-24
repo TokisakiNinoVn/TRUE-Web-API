@@ -11,7 +11,9 @@ const AccountSchema = new mongoose.Schema(
     password: {
         type: String,
         required: [true, "Please fill your password"],
-        unique: true
+        unique: true,
+        minLength: 8,
+        select: false,
     },
     role: {
         type: mongoose.Schema.Types.ObjectId,
