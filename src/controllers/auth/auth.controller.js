@@ -1,121 +1,105 @@
 const jwt = require('jsonwebtoken');
-const { Account } = require('@app/models');
-const AppError = require('@app/utils/app-error');
-const { HTTP_STATUS } = require('@app/constants/status-code');
+const bcrypt = require('bcryptjs');
+const { Account } = require('../../models/index');
 const { LoginSchema } = require('./auth.validation');
+const { HTTP_STATUS } = require('../../constants/status-code.js');
+const AppError = require('../../utils/app-error');
 
-const createToken = async userInfo => {
-  return jwt.sign({
-    userInfo
-  }, process.env.JWT_SECRET, {
-    expiresIn: process.env.JWT_EXPIRES_IN
-  });
+const createToken = async (userInfo) => {
+    return jwt.sign({
+        userInfo
+    }, process.env.JWT_SECRET, {
+        expiresIn: process.env.JWT_EXPIRES_IN
+    });
 };
 
 exports.login = async (req, res, next) => {
-  try {
-    const { username, password } = req.body;
+    try {
+        // Validate login input
+        const { username, password } = req.body;
 
-    // Bước 1: validate dữ liệu đăng nhập
-    const { error } = LoginSchema.validate({ username, password });
-    if (error) {
-      return next(new AppError(HTTP_STATUS.BAD_REQUEST, 'Bad Request', `Validation error: ${error.details.map(x => x.message).join(', ')}`), req, res, next);
-    }
-    
-    // Bước 2: Kiểm tra thông tin username và password trong DB
-    const userDB = await Account.findOne({ username }).select("+password").populate("role userInfor");
-    if (!userDB) {
-      return next(new AppError(HTTP_STATUS.BAD_REQUEST, "failed", "Tài khoản không tồn tại!"), req, res, next);
-    }
+        // Check if the user exists
+        const user = await Account.findOne({ username }).select('+password');
+        if (!user) {
+            return next(new AppError(HTTP_STATUS.UNAUTHORIZED, 'fail', 'Invalid username or password'));
+        }
 
-    // Bước 3: Kiểm tra xem mật khẩu có chính xác không?
-    if (!(await userDB.correctPassword(password, userDB.password))) {
-      return next(new AppError(HTTP_STATUS.BAD_REQUEST, "failed", "Sai mật khẩu. Xin hãy kiểm tra lại."), req, res, next);
-    }
+        // Check if the password matches
+        const isMatch = await bcrypt.compare(password, user.password);
+        if (!isMatch) {
+            return next(new AppError(HTTP_STATUS.UNAUTHORIZED, 'fail', 'Invalid username or password'));
+        }
 
-    // Bước 4: Kiểm tra xem tài khoản còn đang được kích hoạt không?
-    if (!userDB.active) {
-      return next(new AppError(HTTP_STATUS.BAD_REQUEST, "failed", "Tài khoản chưa được kích hoạt. Liên hệ với BQT để kích hoạt tài khoản"), req, res, next);
-    }
+        // Create token
+        const token = await createToken({
+            id: user._id,
+            username: user.username,
+            role: user.role
+        });
 
-    // Bước 5: Tất cả đều Ok thì cấp token và thông báo đăng nhập thành công.
-    const userLoginedData = {
-      id: userDB.id,
-      username,
-      fullname: userDB.userInfor?.fullname
+        // Remove password from output
+        user.password = undefined;
+
+        res.status(HTTP_STATUS.OK).json({
+            status: 'success',
+            token,
+            data: user,
+            message: "Đăng nhập thành công"
+        });
+    } catch (error) {
+        next(error);
     }
-    const token = await createToken(userLoginedData);
-    
-    res.status(HTTP_STATUS.OK).json({
-      status: 'success',
-      token,
-      data: userLoginedData,
-      message: "Đăng nhập thành công"
-    });
-  } catch (error) {
-    next(error);
-  }
 };
 
 exports.logout = async (req, res, next) => {
-  const token = req.headers["x-access-token"];
-  return res.status(HTTP_STATUS.OK).json({
-    status: 'success',
-    token,
-    message: 'Đăng xuất thành công.'
-  });
-}
+    const token = req.headers['x-access-token'];
+    // Here you might want to invalidate the token or handle token blacklisting if needed
+    res.status(HTTP_STATUS.OK).json({
+        status: 'success',
+        message: 'Đăng xuất thành công.'
+    });
+};
 
 exports.signup = async (req, res, next) => {
-  try {
-    let {
-      username,
-      password,
-      name,
-      email,
-      phone,
-      role = 'mod',
-      active = false
-    } = req.body;
+    try {
+        // Validate user information
+        const { username, password, role = 'mod', active = false } = req.body;
 
-    // Check if username already exists
-    const userDB = await Account.findOne({ username }).select("+username");
-    if (userDB) {
-      return next(new AppError(HTTP_STATUS.BAD_REQUEST, "failed", "Tài khoản đã tồn tại. Hãy thử đăng ký tài khoản khác."), req, res, next);
+        // Check if the username already exists
+        const userDB = await Account.findOne({ username }).select('+username');
+        if (userDB) {
+            return next(new AppError(HTTP_STATUS.BAD_REQUEST, 'fail', 'Tài khoản đã tồn tại. Hãy thử đăng ký tài khoản khác.'));
+        }
+
+        // Hash password
+        const hashedPassword = await bcrypt.hash(password, 12);
+
+        // Create user
+        const user = await Account.create({
+            username,
+            password: hashedPassword,
+            role,
+            active
+        });
+
+        // Create token
+        const userData = {
+            id: user._id,
+            username: user.username,
+            role: user.role
+        };
+        const token = await createToken(userData);
+
+        // Remove password from output
+        user.password = undefined;
+        console.log("Tạo tài khoản:", user);
+        res.status(201).json({
+            status: 'success',
+            token,
+            data: user
+        });
+        
+    } catch (err) {
+        next(err);
     }
-
-    // Save user to DB
-    const user = await Account.create({
-      username,
-      password,
-      role,
-      active,
-      userInfor: { // Assuming userInfor needs to be created/assigned here
-        name,
-        email,
-        phone
-      }
-    });
-
-    // Create token and send jwt to client
-    const userData = {
-      id: user.id,
-      username,
-      role: user.role
-    }
-
-    const token = await createToken(userData);
-
-    // Remove the password from the output
-    user.password = undefined;
-
-    res.status(HTTP_STATUS.OK).json({
-      status: 'success',
-      token,
-      data: user
-    });
-
-  } catch (err) {
-    next(err);
-  }
 };

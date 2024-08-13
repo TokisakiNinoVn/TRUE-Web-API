@@ -21,9 +21,9 @@ const AccountSchema = new mongoose.Schema(
         required: true
     },
     status: {
-        type: String,
+        type: Number,
         required: true,
-        default: "offline"
+        default: 0
     },
     active: {
         type: Boolean,
@@ -32,10 +32,10 @@ const AccountSchema = new mongoose.Schema(
     userInfor: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Individual',
-        required: true
+        required: false  // Thay đổi required thành false
     }
-}, { timestamps: true});
+}, { timestamps: true });
 
-
-const Account = mongoose.model("Account", AccountSchema)
+AccountSchema.plugin(mongoosePaginate);
+const Account = mongoose.model("Account", AccountSchema);
 module.exports = Account;

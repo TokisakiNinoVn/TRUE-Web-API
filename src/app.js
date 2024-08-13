@@ -1,52 +1,58 @@
 const express = require('express');
 const dotenv = require('dotenv');
 const helmet = require('helmet');
-// const hpp = require('hpp');
-// const cors = require('cors');
 const rateLimit = require('express-rate-limit');
+const mongoose = require('mongoose');
+const AppError = require('./utils/app-error');
+const globalErrHandler = require('./controllers/error/Error');
 
-// Load environment variables from .env file
 dotenv.config({ path: 'environment/.env' });
 
-// Check if environment variables are loaded
+const uri = process.env.MONGODB_URI || "mongodb+srv://ninoslayneko:tokisakinino%402004@cluster0.ccoowve.mongodb.net/";
+console.log('Manual MONGODB_URI:', process.env.MONGODB_URI);
+
+
+console.log('All Environment Variables:', process.env);
 console.log('>> Environment Variables:');
 console.log(`>> NODE_ENV: ${process.env.NODE_ENV}`);
 console.log(`>> PORT: ${process.env.PORT}`);
 
-const globalErrHandler = require('./controllers/error/Error');
-const AppError = require('./utils/app-error');
+// const uri = process.env.MONGODB_URI;
+if (!uri) {
+    console.error('MONGODB_URI is not defined in the environment variables');
+    process.exit(1);
+}
+
 
 const app = express();
 
-// Allow Cross-Origin requests
-// app.use(cors());
-
 // Set security HTTP headers
-// app.use(helmet());
+app.use(helmet());
 
-// Prevent parameter pollution
-// app.use(hpp());
-
-// Limit request from the same API
+// Limit requests from the same IP
 const limiter = rateLimit({
     max: 15000,
-    windowMs: 5 * 60 * 1000,
+    windowMs: 5 * 60 * 1000, // 5 minutes
     message: {
-      code: 429,
-      status: "rejected",
-      msg: '[Too Many Request from this IP, please try again in 5 minutes] [!]'
+        code: 429,
+        status: "rejected",
+        msg: '[Too Many Requests from this IP, please try again in 5 minutes] [!]'
     }
 });
 
-// Middleware
 app.use(express.json());
 app.use('/api', limiter);
 
-// Declare upload folder
+// Declare upload folder for static files
 app.use(express.static('public'));
-app.use('/api/', require('./routes/api'));
 
-// Handle undefined Routes
+// Public routes
+app.use('/api/auth', require('./routes/public/auth.router'));
+
+// Private routes
+app.use('/api/private', require('./routes/private/private.router'));
+
+// Handle undefined routes
 app.use('*', (req, res, next) => {
     const err = new AppError(404, '[failed]', 'Sorry! Route không tồn tại');
     next(err);
