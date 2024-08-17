@@ -1,2 +1,4 @@
 /node_modules
-/environment
+environment
+.env
+environment/.env

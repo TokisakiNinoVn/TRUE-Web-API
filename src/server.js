@@ -1,8 +1,8 @@
 require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
-const authRoutes = require('./routes/public/auth.router');
-const privateRoutes = require('./routes/private/private.router');
+const  publicRoutes = require('./routes/public/index');
+const privateRoutes  = require('./routes/private/index');
 const { connectDB } = require('./configs/db');
 
 const app = express();
@@ -12,10 +12,10 @@ app.use(express.json());
 connectDB();
 
 // Use public routes
-app.use('/api/auth', authRoutes);
+app.use('/public', publicRoutes);
 
 // Use private routes
-app.use('/api/private', privateRoutes);
+app.use('/private', privateRoutes);
 
 // Start the server
 const PORT = process.env.PORT || 6000;

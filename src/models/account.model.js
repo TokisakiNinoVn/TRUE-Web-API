@@ -18,7 +18,8 @@ const AccountSchema = new mongoose.Schema(
     role: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Role',
-        required: true
+        required: true,
+        default: "Customer"
     },
     status: {
         type: Number,

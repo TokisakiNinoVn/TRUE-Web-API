@@ -53,7 +53,6 @@ exports.login = async (req, res, next) => {
 
 exports.logout = async (req, res, next) => {
     const token = req.headers['x-access-token'];
-    // Here you might want to invalidate the token or handle token blacklisting if needed
     res.status(HTTP_STATUS.OK).json({
         status: 'success',
         message: 'Đăng xuất thành công.'
@@ -62,19 +61,12 @@ exports.logout = async (req, res, next) => {
 
 exports.signup = async (req, res, next) => {
     try {
-        // Validate user information
-        const { username, password, role = 'mod', active = false } = req.body;
-
-        // Check if the username already exists
+        const { username, password, role = 'Customer', active = false } = req.body;
         const userDB = await Account.findOne({ username }).select('+username');
         if (userDB) {
             return next(new AppError(HTTP_STATUS.BAD_REQUEST, 'fail', 'Tài khoản đã tồn tại. Hãy thử đăng ký tài khoản khác.'));
         }
-
-        // Hash password
         const hashedPassword = await bcrypt.hash(password, 12);
-
-        // Create user
         const user = await Account.create({
             username,
             password: hashedPassword,
@@ -90,7 +82,6 @@ exports.signup = async (req, res, next) => {
         };
         const token = await createToken(userData);
 
-        // Remove password from output
         user.password = undefined;
         console.log("Tạo tài khoản:", user);
         res.status(201).json({
