@@ -4,13 +4,6 @@ const { Account, Role } = require('../../models/index');
 const { LoginSchema } = require('./auth.validation');
 const { HTTP_STATUS } = require('../../constants/status-code.js');
 const AppError = require('../../utils/app-error');
-// const jwt = require('jsonwebtoken');
-// const bcrypt = require('bcryptjs');
-// const Account = require('../../models/Account'); // Ensure the correct import
-// const Role = require('../../models/Role'); // Import Role model
-// const { LoginSchema } = require('./auth.validation');
-// const { HTTP_STATUS } = require('../../constants/status-code.js');
-// const AppError = require('../../utils/app-error');
 
 const createToken = async (userInfo) => {
     return jwt.sign({
