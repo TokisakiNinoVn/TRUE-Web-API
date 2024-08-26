@@ -15,25 +15,23 @@ const AccountSchema = new mongoose.Schema(
         minLength: 8,
         select: false,
     },
-    role: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'Role',
-        required: true,
-        default: "Customer"
-    },
+    role: [
+        {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "Role",
+        }
+    ],
     status: {
         type: Number,
-        required: true,
         default: 0
     },
     active: {
         type: Boolean,
-        required: true
+        default: false
     },
     userInfor: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'Individual',
-        required: false  // Thay đổi required thành false
+        ref: 'Individual'
     }
 }, { timestamps: true });
 

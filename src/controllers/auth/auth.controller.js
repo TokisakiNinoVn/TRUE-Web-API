@@ -1,9 +1,16 @@
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
-const { Account } = require('../../models/index');
+const { Account, Role } = require('../../models/index');
 const { LoginSchema } = require('./auth.validation');
 const { HTTP_STATUS } = require('../../constants/status-code.js');
 const AppError = require('../../utils/app-error');
+// const jwt = require('jsonwebtoken');
+// const bcrypt = require('bcryptjs');
+// const Account = require('../../models/Account'); // Ensure the correct import
+// const Role = require('../../models/Role'); // Import Role model
+// const { LoginSchema } = require('./auth.validation');
+// const { HTTP_STATUS } = require('../../constants/status-code.js');
+// const AppError = require('../../utils/app-error');
 
 const createToken = async (userInfo) => {
     return jwt.sign({
@@ -15,11 +22,10 @@ const createToken = async (userInfo) => {
 
 exports.login = async (req, res, next) => {
     try {
-        // Validate login input
         const { username, password } = req.body;
 
         // Check if the user exists
-        const user = await Account.findOne({ username }).select('+password');
+        const user = await Account.findOne({ username }).select('+password').populate('role');
         if (!user) {
             return next(new AppError(HTTP_STATUS.UNAUTHORIZED, 'fail', 'Invalid username or password'));
         }
@@ -52,7 +58,6 @@ exports.login = async (req, res, next) => {
 };
 
 exports.logout = async (req, res, next) => {
-    const token = req.headers['x-access-token'];
     res.status(HTTP_STATUS.OK).json({
         status: 'success',
         message: 'Đăng xuất thành công.'
@@ -61,17 +66,29 @@ exports.logout = async (req, res, next) => {
 
 exports.signup = async (req, res, next) => {
     try {
-        const { username, password, role = 'Customer', active = false } = req.body;
+        const { username, password } = req.body;
+
+        // Check if the user already exists
         const userDB = await Account.findOne({ username }).select('+username');
         if (userDB) {
             return next(new AppError(HTTP_STATUS.BAD_REQUEST, 'fail', 'Tài khoản đã tồn tại. Hãy thử đăng ký tài khoản khác.'));
         }
+
+        // Hash password
         const hashedPassword = await bcrypt.hash(password, 12);
+
+        // Get role ID for 'Customer'
+        const customerRole = await Role.findOne({ name: 'Customer' });
+        if (!customerRole) {
+            return next(new AppError(HTTP_STATUS.INTERNAL_SERVER_ERROR, 'fail', 'Role "Customer" not found.'));
+        }
+
+        // Create the user
         const user = await Account.create({
             username,
             password: hashedPassword,
-            role,
-            active
+            role: customerRole._id,
+            active: false
         });
 
         // Create token
@@ -83,7 +100,7 @@ exports.signup = async (req, res, next) => {
         const token = await createToken(userData);
 
         user.password = undefined;
-        console.log("Tạo tài khoản:", user);
+
         res.status(201).json({
             status: 'success',
             token,
