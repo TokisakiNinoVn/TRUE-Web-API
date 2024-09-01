@@ -1,11 +1,11 @@
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
-const { Account, Role } = require('../../models/index');
-const { LoginSchema } = require('./auth.validation');
+const { Account, Role, Individual } = require('../../models/index');
 const { HTTP_STATUS } = require('../../constants/status-code.js');
 const AppError = require('../../utils/app-error');
+const { LoginSchema } = require('./auth.validation');
 
-const createToken = async (userInfo) => {
+const createToken = async userInfo => {
     return jwt.sign({
         userInfo
     }, process.env.JWT_SECRET, {
@@ -16,33 +16,50 @@ const createToken = async (userInfo) => {
 exports.login = async (req, res, next) => {
     try {
         const { username, password } = req.body;
+        
+        // 1) Validate user input
+        const { error } = LoginSchema.validate({ username, password });
+        if (error) {
+            return next(new AppError(HTTP_STATUS.BAD_REQUEST, 'Bad Request', `Validation error: ${error.details.map(x => x.message).join(', ')}`));
+        }
 
-        // Check if the user exists
-        const user = await Account.findOne({ username }).select('+password').populate('role');
+        // 2) Check if user exists
+        const user = await Account.findOne({ username })
+            .select('+password')
+            .populate('role');
+
         if (!user) {
             return next(new AppError(HTTP_STATUS.UNAUTHORIZED, 'fail', 'Invalid username or password'));
         }
 
-        // Check if the password matches
+        // 3) Check password
         const isMatch = await bcrypt.compare(password, user.password);
         if (!isMatch) {
             return next(new AppError(HTTP_STATUS.UNAUTHORIZED, 'fail', 'Invalid username or password'));
         }
 
-        // Create token
-        const token = await createToken({
-            id: user._id,
-            username: user.username,
-            role: user.role
-        });
+        const individualInfo = await Individual.findById(user.userInfor);
 
-        // Remove password from output
+        if (!individualInfo) {
+            return next(new AppError(HTTP_STATUS.NOT_FOUND, 'fail', 'User information not found'));
+        }
+
+        const userLoginedData = {
+            id: user.id,
+            username,
+            role: user.role.name,
+            userInfor: individualInfo
+        };
+        
+        // 4) Create token
+        const token = await createToken(userLoginedData);
+
         user.password = undefined;
 
         res.status(HTTP_STATUS.OK).json({
             status: 'success',
             token,
-            data: user,
+            data: userLoginedData,
             message: "Đăng nhập thành công"
         });
     } catch (error) {
@@ -50,11 +67,18 @@ exports.login = async (req, res, next) => {
     }
 };
 
+
 exports.logout = async (req, res, next) => {
-    res.status(HTTP_STATUS.OK).json({
+    // res.status(HTTP_STATUS.OK).json({
+    //     status: 'success',
+    //     message: 'Đăng xuất thành công.'
+    // });
+    const token  = req.headers["x-access-token"];
+    return res.status(HTTP_STATUS.OK).json({
         status: 'success',
+        token,
         message: 'Đăng xuất thành công.'
-    });
+    })
 };
 
 exports.signup = async (req, res, next) => {

@@ -36,12 +36,8 @@ app.use('/api', limiter);
 app.use(express.static('public'));
 
 app.use('/public', require('./routes/public/index'));
-app.use('/private', require('./routes/private/index'));
+app.use('/auth', require('./routes/auth/index'));
 
-app.use('*', (req, res, next) => {
-    const err = new AppError(404, '[failed]', 'Sorry! Route không tồn tại');
-    next(err, req, res, next);
-});
 
 app.use(globalErrHandler);
 
