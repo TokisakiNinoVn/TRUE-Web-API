@@ -12,88 +12,31 @@ const AppError = require('../../utils/app-error');
 exports.updateAccount = async (req, res, next) => {
     try {
         const accountId = req.params.id;
-        const {
-            username,
-            password,
-            role,
-            status,
-            active,
-            individualData
-        } = req.body;
+        const { userInfor } = req.body;
 
-        // Find account by ID
         let account = await Account.findById(accountId);
 
         if (!account) {
-            // return res.status(404).json({ message: 'Account not found' });
             return next(new AppError(HTTP_STATUS.NOT_FOUND, 'failed', 'Account not found', {}), req, res, next);
         }
 
-        // Update account fields
-        if (username) account.username = username;
-        if (password) {
-            const salt = await bcrypt.genSalt(10);
-            account.password = await bcrypt.hash(password, salt);
-        }
-        if (role) account.role = role;
-        if (status !== undefined) account.status = status;
-        if (active !== undefined) account.active = active;
-
-        // Update or create Individual information
         if (account.userInfor) {
-            // Update existing Individual
-            await Individual.findByIdAndUpdate(account.userInfor, individualData, { new: true, runValidators: true });
+            await Individual.findByIdAndUpdate(account.userInfor, userInfor, { new: true, runValidators: true });
         } else {
-            // Create new Individual and associate with account
-            const newIndividual = new Individual(individualData);
+            const newIndividual = new Individual(userInfor);
             await newIndividual.save();
             account.userInfor = newIndividual._id;
         }
 
         await account.save();
 
-        // Populate the Individual data before sending response
-        account = await Account.findById(accountId).populate('userInfor');
-
-        return res.status(200).json({
-            message: 'Account updated successfully',
-            data: account
-        });
+        const docs = await Account.findById(accountId).populate('userInfor');
+        return next(docs, req, res, next);
     } catch (error) {
-        // console.error(error);
-        // res.status(500).json({ message: 'Server Error' });
-        return next(error)
+        return next(new AppError(HTTP_STATUS.INTERNAL_SERVER_ERROR, 'failed', 'An error occurred', {}), req, res, next);
     }
 };
 
-/**
- * @desc    Get All Accounts with Individual Information
- * @route   GET /api/accounts
- * @access  Private
- */
-exports.getAllAccounts = async (req, res, next) => {
-    try {
-        const { page, limit } = req.query;
-
-        const options = {
-            page: parseInt(page, 10) || 1,
-            limit: parseInt(limit, 10) || 10,
-            populate: 'userInfor'
-        };
-
-        const accounts = await Account.paginate({}, options);
-
-        return res.status(200).json({
-            message: 'Accounts retrieved successfully',
-            data: accounts
-        });
-    } catch (error) {
-        // console.error(error);
-        // res.status(500).json({ message: 'Server Error' });
-        return next(error)
-
-    }
-};
 
 /**
  * @desc    Delete Account and Associated Individual Information
@@ -107,49 +50,56 @@ exports.deleteAccount = async (req, res, next) => {
         const account = await Account.findById(accountId);
 
         if (!account) {
-            // return res.status(404).json({ message: 'Account not found' });
             return next(new AppError(HTTP_STATUS.NOT_FOUND, 'failed', 'Account not found', {}), req, res, next);
         }
-
-        // Delete associated Individual if exists
         if (account.userInfor) {
             await Individual.findByIdAndDelete(account.userInfor);
         }
 
-        // Delete Account
-        await Account.findByIdAndDelete(accountId);
+        const docs = await Account.findByIdAndDelete(accountId);
 
-        return res.status(200).json({ message: 'Account and associated Individual information deleted successfully' });
+        return next(docs, req, res, next);
     } catch (error) {
-        // console.error(error);
-        // res.status(500).json({ message: 'Server Error' });
-        return next(error)
-
+        return next(new AppError(HTTP_STATUS.NOT_FOUND, 'failed', 'Account not found', {}), req, res, next);
     }
 };
 
-// Get account details including individual info
+/**
+ * @desc    Get account details including individual info
+ * @route   GET /api/accounts/:id
+ * @access  Private
+ */
 exports.getAccountDetails = async (req, res, next) => {
     try {
-      const { accountId } = req.params;
-  
-      const account = await Account.findById(accountId).populate('userInfor');
-  
-      if (!account) {
-        //   return res.status(404).json({ message: "Account not found" });
-          return next(new AppError(HTTP_STATUS.NOT_FOUND, 'failed', 'Account not found', {}), req, res, next);
-      }
-  
-      return res.status(200).json(account);
+        const accountId = req.params.id;
+        const docs = await Account.findById(accountId).populate('userInfor');
+        docs.role = undefined;
+        return next(docs, req, res, next);
     } catch (error) {
-        // return res.status(500).json({ message: "Server error", error });
-        return  next(error)
-        
+        return next(new AppError(HTTP_STATUS.NOT_FOUND, 'failed', 'Account not found', {}), req, res, next);
     }
-  };
-  
-// module.exports = {
-//     updateAccount,
-//     getAllAccounts,
-//     deleteAccount
-// };
+};
+
+
+
+/**
+ * @desc    Get All Accounts with Individual Information
+ * @route   GET /api/accounts
+ * @access  Private
+ */
+exports.getAllAccounts = async (req, res, next) => {
+    try {
+        const { page, limit } = req.query;
+
+        const options = {
+            page: parseInt(page, 10) || 1,
+            limit: parseInt(limit, 10) || 10,
+        };
+
+        const docs = await Account.paginate({}, options);
+
+        return next(docs, req, res, next);
+    } catch (error) {
+        return next(new AppError(HTTP_STATUS.NOT_FOUND, 'failed', 'Account not found', {}), req, res, next);
+    }
+};

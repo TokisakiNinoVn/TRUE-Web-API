@@ -34,8 +34,12 @@ const IndividualSchema = new mongoose.Schema(
         type: Boolean,
         default: false
     },
-    note: {
+    bio: {
         type: String,
+        default: ""
+    },
+    note: {
+        type: String, 
         default: ""
     }
 }, { timestamps: true });

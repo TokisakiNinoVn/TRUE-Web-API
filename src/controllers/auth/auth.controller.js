@@ -6,11 +6,7 @@ const AppError = require('../../utils/app-error');
 const { LoginSchema } = require('./auth.validation');
 
 const createToken = async userInfo => {
-    return jwt.sign({
-        userInfo
-    }, process.env.JWT_SECRET, {
-        expiresIn: process.env.JWT_EXPIRES_IN
-    });
+    return jwt.sign({userInfo}, process.env.JWT_SECRET, {expiresIn: "24h"});
 };
 
 exports.login = async (req, res, next) => {
@@ -29,26 +25,19 @@ exports.login = async (req, res, next) => {
             .populate('role');
 
         if (!user) {
-            return next(new AppError(HTTP_STATUS.UNAUTHORIZED, 'fail', 'Invalid username or password'));
+            return next(new AppError(HTTP_STATUS.UNAUTHORIZED, 'fail', 'Sai thông tin tên tài khoản hoặc mật khẩu! 🥲'));
         }
 
         // 3) Check password
         const isMatch = await bcrypt.compare(password, user.password);
         if (!isMatch) {
-            return next(new AppError(HTTP_STATUS.UNAUTHORIZED, 'fail', 'Invalid username or password'));
-        }
-
-        const individualInfo = await Individual.findById(user.userInfor);
-
-        if (!individualInfo) {
-            return next(new AppError(HTTP_STATUS.NOT_FOUND, 'fail', 'User information not found'));
+            return next(new AppError(HTTP_STATUS.UNAUTHORIZED, 'fail', 'Sai thông tin tên tài khoản hoặc mật khẩu! 🥲'));
         }
 
         const userLoginedData = {
             id: user.id,
             username,
             role: user.role.name,
-            userInfor: individualInfo
         };
         
         // 4) Create token
@@ -111,8 +100,7 @@ exports.signup = async (req, res, next) => {
         // Create token
         const userData = {
             id: user._id,
-            username: user.username,
-            role: user.role
+            username: user.username
         };
         const token = await createToken(userData);
 
