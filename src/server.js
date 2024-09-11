@@ -29,19 +29,18 @@ app.use('/public', publicRoutes);
 // Sử dụng các route cần đăng nhập
 app.use('/auth', protect, processLogInfo, authApi);
 
-app.get('/test-token', protect, (req, res) => {
-    res.status(200).json({
-      status: 'success',
-      message: 'Token is valid',
-      decoded: req.jwtDecoded // Hiển thị thông tin giải mã từ token
-    });
-});
+// The API for check server status
+app.get('/', function(request, response) {
+  response.status(200).json({
+    status: "Success",
+    message: "The API Server is running!"
+  })
+})
 
 app.use('*', (req, res, next) => {
     const err = new AppError(404, '[failed]', 'Sorry! Route không tồn tại');
     next(err, req, res, next);
 });
-
 
 // Bắt đầu server
 const PORT = process.env.PORT || 5000;

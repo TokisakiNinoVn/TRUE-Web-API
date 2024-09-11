@@ -10,6 +10,7 @@ console.log(">> " + jwtSecret);
 exports.protect = async (req, res, next) => {
   try {
     // 1) Check if the token is present
+    // const fulltoken = req.cookies.token;
     const authHeader = req.headers.authorization;
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       return next(new AppError(HTTP_STATUS.UNAUTHORIZED, 'failed', 'You are not logged in! Please login to continue.'), req, res, next);
