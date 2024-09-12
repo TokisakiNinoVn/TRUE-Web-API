@@ -5,7 +5,7 @@ const dotenv = require('dotenv');
 dotenv.config({ path: '../../environment/dev.env' });
 
 const jwtSecret = process.env.JWT_SECRET || "SdSShFguTxptKPTJELuvoOyOUkGfESSp";
-console.log(">> " + jwtSecret);
+// console.log(">> " + jwtSecret);
 
 exports.protect = async (req, res, next) => {
   try {

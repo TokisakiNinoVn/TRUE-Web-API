@@ -8,7 +8,7 @@ const globalErrHandler = require('./controllers/error/Error');
 
 dotenv.config({ path: 'environment/dev.env' });
 
-const uri = process.env.MONGODB_URI || "your_default_uri_here";
+const uri = process.env.MONGODB_URI;
 console.log('Manual MONGODB_URI:', process.env.MONGODB_URI);
 
 if (!uri) {
