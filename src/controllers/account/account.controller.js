@@ -1,23 +1,22 @@
-const jwt = require('jsonwebtoken');
-const bcrypt = require('bcryptjs');
 const { Account, Individual } = require('../../models/index');
 const { HTTP_STATUS } = require('../../constants/status-code');
 const AppError = require('../../utils/app-error');
 
 /**
  * @desc    Update Account and Individual Information
- * @route   PUT /api/accounts/:id
+ * @route   PUT /api/account/username
  * @access  Private
  */
 exports.updateAccount = async (req, res, next) => {
     try {
-        const accountId = req.params.id;
+        const { username } = req.params;
         const { userInfor } = req.body;
 
-        let account = await Account.findById(accountId);
+        const account = await Account.findOne({ username });
 
         if (!account) {
-            return next(new AppError(HTTP_STATUS.NOT_FOUND, 'failed', 'Account not found', {}), req, res, next);
+            console.log('Account not found');
+            return next(new AppError(HTTP_STATUS.NOT_FOUND, 'failed', 'Account not found', {}));
         }
 
         if (account.userInfor) {
@@ -30,13 +29,13 @@ exports.updateAccount = async (req, res, next) => {
 
         await account.save();
 
-        const docs = await Account.findById(accountId).populate('userInfor');
+        const docs = await Account.findOne({ username }).populate('userInfor');
         return next(docs, req, res, next);
     } catch (error) {
-        return next(new AppError(HTTP_STATUS.INTERNAL_SERVER_ERROR, 'failed', 'An error occurred', {}), req, res, next);
+        console.error('An error occurred:', error);
+        return next(new AppError(HTTP_STATUS.INTERNAL_SERVER_ERROR, 'failed', 'An error occurred', {}));
     }
 };
-
 
 /**
  * @desc    Delete Account and Associated Individual Information
@@ -50,7 +49,7 @@ exports.deleteAccount = async (req, res, next) => {
         const account = await Account.findById(accountId);
 
         if (!account) {
-            return next(new AppError(HTTP_STATUS.NOT_FOUND, 'failed', 'Account not found', {}), req, res, next);
+            return next(new AppError(HTTP_STATUS.NOT_FOUND, 'fail', 'No document found', []), req, res, next);
         }
         if (account.userInfor) {
             await Individual.findByIdAndDelete(account.userInfor);
@@ -60,7 +59,7 @@ exports.deleteAccount = async (req, res, next) => {
 
         return next(docs, req, res, next);
     } catch (error) {
-        return next(new AppError(HTTP_STATUS.NOT_FOUND, 'failed', 'Account not found', {}), req, res, next);
+        return next(new AppError(HTTP_STATUS.NOT_FOUND, 'fail', 'No document found', []), req, res, next);
     }
 };
 
@@ -76,9 +75,37 @@ exports.getAccountDetails = async (req, res, next) => {
         docs.role = undefined;
         return next(docs, req, res, next);
     } catch (error) {
-        return next(new AppError(HTTP_STATUS.NOT_FOUND, 'failed', 'Account not found', {}), req, res, next);
+        return next(new AppError(HTTP_STATUS.NOT_FOUND, 'fail', 'No document found', []), req, res, next);
     }
 };
+
+exports.getInforByUsername = async (req, res, next) => {
+    try {
+        const username = req.params.username;
+
+        const account = await Account.findOne({ username })
+            .populate('userInfor')
+            .lean()
+            .select('username status active userInfor');
+
+        if (!account) {
+            return next(new AppError(HTTP_STATUS.NOT_FOUND, 'failed', 'Account not found', {}));
+        }
+
+        // Loại bỏ các trường không cần thiết
+        const { updatedAt, createdAt, __v, _id, note, ...filteredAccount } = account;
+        const { updatedAt: userUpdatedAt, createdAt: userCreatedAt, __v: userV, _id: userId, note: userNote,...filteredUserInfor } = account.userInfor;
+
+        // Tạo phản hồi với dữ liệu đã được lọc
+        res.json({
+            ...filteredAccount,
+            userInfor: filteredUserInfor
+        });
+    } catch (error) {
+        return next(new AppError(HTTP_STATUS.SERVER_ERROR, 'failed', 'Something went wrong', {}));
+    }
+};
+
 
 
 
@@ -100,6 +127,6 @@ exports.getAllAccounts = async (req, res, next) => {
 
         return next(docs, req, res, next);
     } catch (error) {
-        return next(new AppError(HTTP_STATUS.NOT_FOUND, 'failed', 'Account not found', {}), req, res, next);
+        return next(new AppError(HTTP_STATUS.NOT_FOUND, 'fail', 'No document found', []), req, res, next);
     }
 };
