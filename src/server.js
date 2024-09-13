@@ -9,6 +9,7 @@ const { protect } = require('./middlewares/token-middleware');
 const { processLogInfo, writeLog } = require('.//middlewares/logInfo-middleware');
 const responseMiddleware = require('./middlewares/response-middleware');
 const AppError = require('./utils/app-error');
+const path = require('path');
 const app = express();
 
 // Cấu hình CORS để cho phép yêu cầu từ frontend
@@ -23,6 +24,9 @@ app.use(express.json());
 // Kết nối tới cơ sở dữ liệu
 connectDB();
 
+// Cách 1: Chỉ sử dụng express.static
+app.use(express.static('public'));
+
 // Sử dụng các route công khai
 app.use('/public', publicRoutes);
 
@@ -33,9 +37,14 @@ app.use('/auth', protect, processLogInfo, authApi);
 app.get('/', function(request, response) {
   response.status(200).json({
     status: "Success",
-    message: "The API Server is running!"
+    message: "The API Server is running! server"
   })
 })
+
+app.use((req, res, next) => {
+  console.log(`Received request for: ${req.originalUrl}`);
+  next();
+});
 
 app.use('*', (req, res, next) => {
     const err = new AppError(404, '[failed]', 'Sorry! Route không tồn tại');

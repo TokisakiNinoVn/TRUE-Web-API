@@ -20,14 +20,15 @@ const IndividualSchema = new mongoose.Schema(
         default: ""
     },
     avatar: {
-        type: String,
-        default: ""
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Avatar",
+        
     },
     gender: {
         type: Number,
     },
     birthday: {
-        type: Date,
+        type: Date, 
         default: mongoose.now
     },
     verification: {
@@ -39,7 +40,7 @@ const IndividualSchema = new mongoose.Schema(
         default: ""
     },
     note: {
-        type: String, 
+        type: String,
         default: ""
     }
 }, { timestamps: true });

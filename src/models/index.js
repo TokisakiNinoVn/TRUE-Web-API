@@ -3,4 +3,5 @@ module.exports = {
     Role: require('./role.model'),
     Individual: require('./individual.model'),
     Logs: require('./logs.model'),
+    Avatar: require('./avatar.model'),
 }
