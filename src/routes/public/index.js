@@ -8,7 +8,7 @@ const accountRouter = require('./account.router');
 
 // Use child router
 router.use('/auth', authRouter);
-router.use('/account', accountRouter);
+router.use('/user', accountRouter);
 
 module.exports = router;
 

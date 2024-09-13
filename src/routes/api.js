@@ -5,7 +5,7 @@ const app = express();
 app.get('/', function(request, response) {
   response.status(200).json({
     status: "Success",
-    message: "The API Server is running!"
+    message: "The API Server is running! api"
   })
 })
 

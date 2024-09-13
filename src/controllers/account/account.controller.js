@@ -83,8 +83,15 @@ exports.getInforByUsername = async (req, res, next) => {
     try {
         const username = req.params.username;
 
+        // Tìm kiếm tài khoản và populate thông tin cá nhân
         const account = await Account.findOne({ username })
-            .populate('userInfor')
+            .populate({
+                path: 'userInfor',
+                populate: {
+                    path: 'avatar',
+                    model: 'Avatar'
+                }
+            })
             .lean()
             .select('username status active userInfor');
 
@@ -92,21 +99,58 @@ exports.getInforByUsername = async (req, res, next) => {
             return next(new AppError(HTTP_STATUS.NOT_FOUND, 'failed', 'Account not found', {}));
         }
 
-        // Loại bỏ các trường không cần thiết
+        // Lọc các thuộc tính không cần thiết từ Account
         const { updatedAt, createdAt, __v, _id, note, ...filteredAccount } = account;
-        const { updatedAt: userUpdatedAt, createdAt: userCreatedAt, __v: userV, _id: userId, note: userNote,...filteredUserInfor } = account.userInfor;
 
-        // Tạo phản hồi với dữ liệu đã được lọc
+        // Kiểm tra nếu userInfor tồn tại
+        let filteredUserInfor = null;
+        if (account.userInfor) {
+            const { updatedAt: userUpdatedAt, createdAt: userCreatedAt, __v: userV, _id: userId, note: userNote, avatar, ...userInforFiltered } = account.userInfor;
+
+            // Kiểm tra nếu avatar không tồn tại hoặc là chuỗi rỗng
+            let userAvatar = null;
+            if (avatar) {
+                userAvatar = avatar;
+            } else {
+                userAvatar = {
+                    _id: "66e402cf7bd14f41798aebc0",
+                    name: "avatardefault.jpg",
+                    imageUrl: "/uploads/images/avatars/avatardefault.jpg",
+                };
+            }
+
+            filteredUserInfor = {
+                ...userInforFiltered,
+                avatar: userAvatar
+            };
+        } else {
+            // Nếu không có userInfor, thêm thông tin userInfor với avatar mặc định
+            filteredUserInfor = {
+                fullname: "",
+                email: "",
+                phone: "",
+                address: "",
+                avatar: {
+                    _id: "66e402cf7bd14f41798aebc0",
+                    name: "avatardefault.jpg",
+                    imageUrl: "/uploads/images/avatars/avatardefault.jpg",
+                },
+                gender: null,
+                birthday: null,
+                verification: false,
+                bio: "",
+                note: ""
+            };
+        }
+
         res.json({
             ...filteredAccount,
             userInfor: filteredUserInfor
         });
     } catch (error) {
-        return next(new AppError(HTTP_STATUS.SERVER_ERROR, 'failed', 'Something went wrong', {}));
+        return next(new AppError(HTTP_STATUS.INTERNAL_SERVER_ERROR, 'fail', 'Error fetching account information', []));
     }
 };
-
-
 
 
 /**
