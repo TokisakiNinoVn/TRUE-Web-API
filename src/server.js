@@ -46,6 +46,12 @@ app.use((req, res, next) => {
   next();
 });
 
+// app.use((req, res, next) => {
+//   console.log('Authorization Header:', req.headers.authorization);
+//   next();
+// });
+
+
 app.use('*', (req, res, next) => {
     const err = new AppError(404, '[failed]', 'Sorry! Route không tồn tại');
     next(err, req, res, next);
