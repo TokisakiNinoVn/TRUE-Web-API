@@ -4,4 +4,6 @@ module.exports = {
     avatarController: require("./avatar/avatar.controller"),
     fileController: require("./file/file.controller"),
     postController: require("./post/post.controller"),
+    conversationController: require("./conversation/conversation.controller"),
+    messageController: require("./message/message.controller"),
 };
