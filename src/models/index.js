@@ -8,4 +8,6 @@ module.exports = {
     Avatar: require('./avatar.model'),
     Post: require('./post.model'),
     File: require('./file.model'),
+    Conversation: require('./conversation.model'),
+    Message: require('./message.model'),
 }

@@ -7,6 +7,8 @@ const avatarRouter = require("./avatar.router");
 const fileRouter = require("./file.router");
 const authRouter = require("./auth.router");
 const postRouter = require("./post.router");
+const conversationRouter = require("./conversation.router");
+const messageRouter = require("./message.router");
 
 
 // Use child router
@@ -15,6 +17,8 @@ app.use("/avatar", avatarRouter);
 app.use("/logout", authRouter);
 app.use("/post", postRouter);
 app.use("/file", fileRouter);
+app.use("/messages", conversationRouter);
+app.use("/message", messageRouter);
 
 
 module.exports = app;
