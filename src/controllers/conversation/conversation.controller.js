@@ -6,39 +6,53 @@ exports.getConversationsForUserLogin = async (req, res, next) => {
     const { userLogin } = req.body;
 
     try {
-        if (!userLogin) {
-            return res.status(400).json({ message: 'Username is required.' });
-        }
-
-        // Tìm tất cả các cuộc hội thoại với account1.username trùng với userLogin
         const conversations = await Conversation.find({
-            'account1.username': userLogin
+            $or: [
+                { 'account1.username': userLogin },
+                { 'account2.username': userLogin }
+            ],
+            isDeletedByUser1: false,
+            isDeletedByUser2: false 
         });
 
-        // Nếu không tìm thấy cuộc hội thoại nào
         if (conversations.length === 0) {
-            return res.status(404).json({ message: "Không tìm thấy cuộc hội thoại nào cho người dùng này." });
+            return res.status(200).json({ message: "Không tìm thấy cuộc hội thoại nào cho người dùng này." });
         }
 
-        // Lấy thông tin của account2 và avatar cho mỗi cuộc hội thoại
-        const conversationDetails = await Promise.all(conversations.map(async (conversation) => {
-            const account2Username = conversation.account2[0].username;
+        const docs = await Promise.all(conversations.map(async (conversation) => {
+            let account2Username = null;
 
-            // Lấy thông tin tài khoản từ collection Account
-            const account2 = await Account.findOne({ username: account2Username });
-            if (!account2) return null;
+            if (conversation.account1.length > 0 && conversation.account1[0].username === userLogin) {
+                account2Username = conversation.account2.length > 0 ? conversation.account2[0].username : null;
+            } else if (conversation.account2.length > 0 && conversation.account2[0].username === userLogin) {
+                account2Username = conversation.account1.length > 0 ? conversation.account1[0].username : null;
+            }
 
-            // Lấy thông tin từ collection Individual
-            const individual = await Individual.findById(account2.userInfor);
-            if (!individual) return null;
+            const account2 = await Account.findOne({ username: account2Username }).select('userInfor');
+            // console.log("account2:", account2);
+            if (!account2) {
+                // console.log("Không tìm thấy tài khoản cho username:", account2Username);
+                return null;
+            }
 
-            // Lấy avatar từ collection Avatars
-            const avatar = await Avatar.findById(individual.avatar);
-            const imageUrl = avatar ? avatar.imageUrl : "";
+            // Thiết lập avatar mặc định
+            let imageUrl = "/uploads/images/avatars/avatardefault.jpg"; 
 
-            // Lấy tin nhắn cuối cùng
+            // Kiểm tra userInfor
+            if (account2.userInfor && account2.userInfor._id) {
+                const individual = await Individual.findById(account2.userInfor).select('avatar');
+                if (individual) {
+                    const avatar = await Avatar.findById(individual.avatar).select('imageUrl');
+                    if (avatar) {
+                        imageUrl = avatar.imageUrl;
+                    }
+                }
+            } else {
+                // console.log("userInfor không hợp lệ:", account2.userInfor);
+            }
+
             const messageDoc = await Message.findOne({ conversation: conversation._id }).sort({ createdAt: -1 });
-            const lastMessage = messageDoc ? messageDoc.messages[messageDoc.messages.length - 1] : null;
+            const lastMessage = messageDoc && messageDoc.messages.length > 0 ? messageDoc.messages[messageDoc.messages.length - 1] : null;
 
             return {
                 conversationId: conversation._id,
@@ -52,16 +66,12 @@ exports.getConversationsForUserLogin = async (req, res, next) => {
             };
         }));
 
-        // Lọc ra các cuộc hội thoại hợp lệ
-        const validConversations = conversationDetails.filter(detail => detail !== null);
-
-        res.status(200).json({ conversations: validConversations });
+        // res.status(200).json({ conversations: docs });
+        return next(docs, req, res, next);
     } catch (error) {
-        next(new AppError(HTTP_STATUS.INTERNAL_SERVER_ERROR, 'fail', 'Error retrieving conversations', []), req, res, next);
+        next(new AppError(HTTP_STATUS.INTERNAL_SERVER_ERROR, 'fail', error.message, []), req, res, next);
     }
 };
-
-
 
 exports.deleteConversationForUser = async (req, res, next) => {
     const { conversationId, username } = req.body;
@@ -86,23 +96,31 @@ exports.deleteConversationForUser = async (req, res, next) => {
             return res.status(403).json({ message: "Người dùng không có quyền xóa cuộc hội thoại này." });
         }
 
-        // Cập nhật trường deleteBy trong collection Message
-        const messageDoc = await Message.findOne({ conversation: conversationId });
-        if (messageDoc) {
-            messageDoc.messages = messageDoc.messages.map(message => {
-                message.deleteBy.push({ username });
+        const docs = await Message.findOne({ conversation: conversationId });
+        if (docs) {
+            docs.messages = docs.messages.map(message => {
+                // Kiểm tra nếu `username` đã có trong `deleteBy`
+                const existingEntry = message.deleteBy.find(entry => entry.username === username);
+                if (existingEntry) {
+                    // Nếu đã có, cập nhật `updateAt`
+                    existingEntry.updateAt = new Date();
+                } else {
+                    // Nếu chưa có, thêm vào
+                    message.deleteBy.push({ username, updateAt: new Date() });
+                }
                 return message; // Trả về tin nhắn đã cập nhật
             });
-            await messageDoc.save();
+            await docs.save();
         }
 
         // Lưu thay đổi cuộc hội thoại
         await conversation.save();
-        res.status(200).json({ message: "Cuộc hội thoại đã được xóa thành công cho người dùng." });
+        return next(docs, req, res, next);
     } catch (error) {
         next(new AppError(HTTP_STATUS.INTERNAL_SERVER_ERROR, 'fail', 'Error deleting conversation', []), req, res, next);
     }
 };
+
 
 
 exports.createConversation = async (req, res, next) => {
@@ -133,11 +151,10 @@ exports.createConversation = async (req, res, next) => {
 
         if (existingConversation) {
             console.log("Cuộc hội thoại đã tồn tại.");
-            return res.status(200).json({ message: "Cuộc hội thoại đã tồn tại.", conversation: existingConversation });
+            // return res.status(200).json({ message: "Cuộc hội thoại đã tồn tại.", conversation: existingConversation });
         }
 
-        // Tạo cuộc hội thoại mới dựa trên username
-        const newConversation = await Conversation.create({
+        const docs = await Conversation.create({
             account1: [
                 {
                     id: user1._id,
@@ -152,7 +169,7 @@ exports.createConversation = async (req, res, next) => {
             ]
         });
 
-        // res.status(201).json({ message: "Cuộc hội thoại đã được tạo thành công.", newConversation });
+        return next(docs, req, res, next);
     } catch (error) {
         console.error("Error:", error);
         next(new AppError(HTTP_STATUS.INTERNAL_SERVER_ERROR, 'fail', 'Error creating conversation', []), req, res, next);
@@ -162,6 +179,7 @@ exports.createConversation = async (req, res, next) => {
 exports.getMessages = async (req, res, next) => {
     const { conversationId, username } = req.body;
     try {
+        // Tìm cuộc hội thoại
         const conversation = await Conversation.findById(conversationId);
         if (!conversation) {
             return res.status(404).json({ message: "Cuộc hội thoại không tồn tại." });
@@ -186,17 +204,25 @@ exports.getMessages = async (req, res, next) => {
             createdAt: { $gte: deletedAt || conversation.createdAt }
         });
 
-        // Nếu không có tin nhắn nào, gửi thông điệp khuyến khích
-        if (messages.length === 0) {
+        // Loại bỏ các tin nhắn mà người dùng đã đánh dấu xóa
+        const docs = messages.map(messageObj => {
+            messageObj.messages = messageObj.messages.filter(message => {
+                // Kiểm tra nếu `username` không có trong `deleteBy`
+                return !message.deleteBy.some(entry => entry.username === username);
+            });
+            return messageObj;
+        });
+
+        // Nếu không có tin nhắn nào sau khi lọc, gửi thông điệp khuyến khích
+        if (docs.length === 0 || docs.every(msgObj => msgObj.messages.length === 0)) {
             return res.status(200).json({ message: "Hãy bắt đầu với tin nhắn đầu tiên của bạn!" });
         }
-
-        // Phản hồi với tin nhắn
-        res.status(200).json({ messages });
+        return next(docs, req, res, next);
     } catch (error) {
         next(new AppError(HTTP_STATUS.INTERNAL_SERVER_ERROR, 'fail', 'Error retrieving messages', []), req, res, next);
     }
 };
+
 
 exports.searchConversationByUsername = async (req, res, next) => {
     const { usernameLogin, username } = req.body;
@@ -213,10 +239,9 @@ exports.searchConversationByUsername = async (req, res, next) => {
 
         // Nếu không tìm thấy cuộc hội thoại nào
         if (conversations.length === 0 || conversations.some(convo => convo.isDeletedByUser1)) {
-            return res.status(404).json({ message: "Hãy bắt đầu với tin nhắn đầu tiên của bạn." });
+            return res.status(200).json({ message: "Hãy bắt đầu với tin nhắn đầu tiên của bạn." });
         }
 
-        // Lấy tin nhắn cho tất cả các cuộc hội thoại tìm thấy
         const messageDocs = await Promise.all(
             conversations.map(conversation => Message.findOne({ conversation: conversation._id }))
         );
@@ -229,10 +254,6 @@ exports.searchConversationByUsername = async (req, res, next) => {
                     type: message.type,
                     content: message.content,
                     status: message.status,
-                    // deleteBy: message.deleteBy.map(deleted => ({
-                    //     username: deleted.username,
-                    //     // _id: deleted._id // Giữ lại cả trường _id nếu cần
-                    // })),
                     createdAt: message.createdAt,
                     _id: message._id
                 }));
@@ -243,8 +264,8 @@ exports.searchConversationByUsername = async (req, res, next) => {
 
         // Phản hồi với danh sách tin nhắn
         const response = {
-            _id: conversations[0]._id, // Hoặc bạn có thể lấy _id từ cuộc hội thoại phù hợp
-            conversation: conversations[0]._id, // Giả sử chỉ lấy cuộc hội thoại đầu tiên
+            _id: conversations[0]._id, 
+            conversation: conversations[0]._id, 
             messages,
             createdAt: conversations[0].createdAt,
             updatedAt: conversations[0].updatedAt,

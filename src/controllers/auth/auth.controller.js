@@ -58,10 +58,6 @@ exports.login = async (req, res, next) => {
 
 
 exports.logout = async (req, res, next) => {
-    // res.status(HTTP_STATUS.OK).json({
-    //     status: 'success',
-    //     message: 'Đăng xuất thành công.'
-    // });
     const token  = req.headers["x-access-token"];
     return res.status(HTTP_STATUS.OK).json({
         status: 'success',
@@ -73,23 +69,15 @@ exports.logout = async (req, res, next) => {
 exports.signup = async (req, res, next) => {
     try {
         const { username, password } = req.body;
-
-        // Check if the user already exists
         const userDB = await Account.findOne({ username }).select('+username');
         if (userDB) {
             return next(new AppError(HTTP_STATUS.BAD_REQUEST, 'fail', 'Tài khoản đã tồn tại. Hãy thử đăng ký tài khoản khác.'));
         }
-
-        // Hash password
         const hashedPassword = await bcrypt.hash(password, 12);
-
-        // Get role ID for 'Customer'
         const customerRole = await Role.findOne({ name: 'Customer' });
         if (!customerRole) {
             return next(new AppError(HTTP_STATUS.INTERNAL_SERVER_ERROR, 'fail', 'Role "Customer" not found.'));
         }
-
-        // Create the user
         const user = await Account.create({
             username,
             password: hashedPassword,
@@ -97,21 +85,18 @@ exports.signup = async (req, res, next) => {
             active: false
         });
 
-        // Create token
+        // Create token 
         const userData = {
             id: user._id,
             username: user.username
         };
         const token = await createToken(userData);
-
         user.password = undefined;
-
         res.status(201).json({
             status: 'success',
             token,
             data: user
         });
-        
     } catch (err) {
         next(err);
     }

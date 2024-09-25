@@ -30,7 +30,7 @@ exports.sendMessage = async (req, res, next) => {
         }
 
         const newMessageContent = {
-            sender: senderUsername, // Dựa trên username của người gửi
+            sender: senderUsername,
             type: type || 'text', 
             content: content,
             deleteBy: [],
@@ -103,20 +103,14 @@ exports.revokeMessage = async (req, res, next) => {
             return res.status(403).json({ message: "Bạn không thể thu hồi tin nhắn này." });
         }
 
-        // Thu hồi tin nhắn (cập nhật trạng thái và nội dung)
         message.type = 'text';
         message.content = 'Tin nhắn này đã được thu hồi.';
-        message.status = 'revoked'; // Cập nhật trạng thái
-
-        // Cập nhật thời gian sửa đổi
+        message.status = 'revoked'; 
         message.updatedAt = new Date();
 
-        // Lưu thay đổi trong collection Message
         await messageDoc.save();
-
         res.status(200).json({ message: "Tin nhắn đã được thu hồi thành công." });
     } catch (error) {
-        // Xử lý lỗi
         console.error("Error details:", error); 
         next(new AppError(HTTP_STATUS.INTERNAL_SERVER_ERROR, 'fail', 'Error revoking message', []), req, res, next);
     }
