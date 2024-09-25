@@ -216,7 +216,7 @@ exports.getMessages = async (req, res, next) => {
         if (docs.length === 0 || docs.every(msgObj => msgObj.messages.length === 0)) {
             return res.status(200).json({ message: "Hãy bắt đầu với tin nhắn đầu tiên của bạn!" });
         }
-        return next(docs, req, res, next);
+        return res.status(200).json({ message: "Lấy dữ liệu tin nhắn thành công!" });
     } catch (error) {
         next(new AppError(HTTP_STATUS.INTERNAL_SERVER_ERROR, 'fail', 'Error retrieving messages', []), req, res, next);
     }
