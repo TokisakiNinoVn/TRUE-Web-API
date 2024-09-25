@@ -58,10 +58,6 @@ exports.login = async (req, res, next) => {
 
 
 exports.logout = async (req, res, next) => {
-    // res.status(HTTP_STATUS.OK).json({
-    //     status: 'success',
-    //     message: 'Đăng xuất thành công.'
-    // });
     const token  = req.headers["x-access-token"];
     return res.status(HTTP_STATUS.OK).json({
         status: 'success',
