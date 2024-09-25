@@ -30,7 +30,7 @@ exports.sendMessage = async (req, res, next) => {
         }
 
         const newMessageContent = {
-            sender: senderUsername, // Dựa trên username của người gửi
+            sender: senderUsername,
             type: type || 'text', 
             content: content,
             deleteBy: [],

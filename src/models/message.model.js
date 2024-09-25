@@ -25,7 +25,8 @@ const MessageSchema = new mongoose.Schema({
         },
 
         deleteBy: [{
-            username: { type: String }
+            username: { type: String },
+            updateAt: { type: Date, default: Date.now }
         }],
         createdAt: { type: Date, default: Date.now }
     }],

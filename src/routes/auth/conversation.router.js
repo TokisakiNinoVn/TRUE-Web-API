@@ -6,7 +6,8 @@ const { conversationController } = require('../../controllers/index');
 router.post('/create', conversationController.createConversation);
 
 // Lấy tin nhắn của một cuộc hội thoại (với id của cuộc hội thoại)
-router.get('/:id', conversationController.getMessages);
+// router.get('/:id', conversationController.getMessages);
+router.post('/:id', conversationController.getMessages);
 
 // Xóa cuộc hội thoại cho một người dùng
 router.delete('/:id', conversationController.deleteConversationForUser);
