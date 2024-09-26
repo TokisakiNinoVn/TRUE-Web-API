@@ -179,6 +179,8 @@ exports.createConversation = async (req, res, next) => {
 exports.getMessages = async (req, res, next) => {
     const { conversationId, username } = req.body;
     try {
+
+        console.log(">> ", conversationId)
         const conversation = await Conversation.findById(conversationId);
         if (!conversation) {
             return res.status(404).json({ message: "Cuộc hội thoại không tồn tại." });
@@ -207,11 +209,12 @@ exports.getMessages = async (req, res, next) => {
         const docs = messages.map(messageObj => {
             messageObj.messages = messageObj.messages.filter(message => {
                 // Kiểm tra nếu `username` không có trong `deleteBy`
-                return !message.deleteBy.some(entry => entry.username === username);
+                return !message.deleteBy.some(entry => entry.username === userName);
             });
             return messageObj;
         });
 
+        const message = []
         // Nếu không có tin nhắn nào sau khi lọc, gửi thông điệp khuyến khích
         if (docs.length === 0 || docs.every(msgObj => msgObj.messages.length === 0)) {
             return res.status(200).json({ message: "Hãy bắt đầu với tin nhắn đầu tiên của bạn!" });
@@ -272,7 +275,6 @@ exports.searchConversationByUsername = async (req, res, next) => {
         };
 
         res.status(200).json({ usernameLogin, ...response });
-
     } catch (error) {
         next(new AppError(HTTP_STATUS.INTERNAL_SERVER_ERROR, 'fail', 'Error searching conversations', []), req, res, next);
     }
