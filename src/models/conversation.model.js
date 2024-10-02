@@ -2,6 +2,8 @@ const mongoose = require('mongoose');
 const mongoosePaginate = require('mongoose-paginate-v2');
 
 const ConversationSchema = new mongoose.Schema({
+// Thông tin một cuộc hội thoại gồm 2 tài khoản người dùng, phần "id" sẽ là "key"
+// map qua collection "Account"
     account1: [
         {
             id: { type: mongoose.Schema.Types.ObjectId, ref: "Account", required: true },
