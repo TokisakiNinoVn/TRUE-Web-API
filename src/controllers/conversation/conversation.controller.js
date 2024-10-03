@@ -179,7 +179,6 @@ exports.createConversation = async (req, res, next) => {
 exports.getMessages = async (req, res, next) => {
     const { conversationId, username } = req.body;
     try {
-        // Tìm cuộc hội thoại
         const conversation = await Conversation.findById(conversationId);
         if (!conversation) {
             return res.status(404).json({ message: "Cuộc hội thoại không tồn tại." });
@@ -217,7 +216,8 @@ exports.getMessages = async (req, res, next) => {
         if (docs.length === 0 || docs.every(msgObj => msgObj.messages.length === 0)) {
             return res.status(200).json({ message: "Hãy bắt đầu với tin nhắn đầu tiên của bạn!" });
         }
-        return next(docs, req, res, next);
+        // return next(docs, req, res, next);
+        return res.status(200).json({ message: "Lấy dữ liệu tin nhắn thành công!" });
     } catch (error) {
         next(new AppError(HTTP_STATUS.INTERNAL_SERVER_ERROR, 'fail', 'Error retrieving messages', []), req, res, next);
     }

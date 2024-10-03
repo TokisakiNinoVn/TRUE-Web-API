@@ -5,7 +5,7 @@ const { createConversation } = require('../conversation/conversation.controller'
 
 exports.sendMessage = async (req, res, next) => {
     const { senderUsername, recipientUsername, type, content } = req.body;
-
+    console.log(">> ", senderUsername)
     try {
         // Tìm kiếm cuộc hội thoại giữa sender và recipient dựa trên username
         let conversation = await Conversation.findOne({
@@ -16,7 +16,7 @@ exports.sendMessage = async (req, res, next) => {
         });
 
         // Nếu không tìm thấy cuộc hội thoại, tạo cuộc hội thoại mới
-        if (!conversation) {
+        if (!) {
             const createConvReq = { body: { username1: senderUsername, username2: recipientUsername } };
             await createConversation(createConvReq, res, next);
             
