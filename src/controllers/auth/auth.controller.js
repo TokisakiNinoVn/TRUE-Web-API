@@ -73,6 +73,7 @@ exports.signup = async (req, res, next) => {
         if (userDB) {
             return next(new AppError(HTTP_STATUS.BAD_REQUEST, 'fail', 'Tài khoản đã tồn tại. Hãy thử đăng ký tài khoản khác.'));
         }
+        // Mã hóa mật khẩu bằng hash password
         const hashedPassword = await bcrypt.hash(password, 12);
         const customerRole = await Role.findOne({ name: 'Customer' });
         if (!customerRole) {
