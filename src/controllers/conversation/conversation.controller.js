@@ -29,12 +29,13 @@ exports.getConversationsForUserLogin = async (req, res, next) => {
             }
 
             const account2 = await Account.findOne({ username: account2Username }).select('userInfor');
-            // console.log("account2:", account2);
+            console.log("account2:", account2);
             if (!account2) {
-                // console.log("Không tìm thấy tài khoản cho username:", account2Username);
+                console.log("Không tìm thấy tài khoản cho username:", account2Username);
                 return null;
             }
 
+            const 
             // Thiết lập avatar mặc định
             let imageUrl = "/uploads/images/avatars/avatardefault.jpg"; 
 
@@ -73,7 +74,7 @@ exports.getConversationsForUserLogin = async (req, res, next) => {
     }
 };
 
-exports.deleteConversationForUser = async (req, res, next) => {
+exports.deleteConversationForUser = async  => {
     const { conversationId, username } = req.body;
     try {
         // Tìm cuộc hội thoại
@@ -151,7 +152,7 @@ exports.createConversation = async (req, res, next) => {
 
         if (existingConversation) {
             console.log("Cuộc hội thoại đã tồn tại.");
-            // return res.status(200).json({ message: "Cuộc hội thoại đã tồn tại.", conversation: existingConversation });
+            return res.status(200).json({ message: "Cuộc hội thoại đã tồn tại.", conversation: existingConversation });
         }
 
         const docs = await Conversation.create({
@@ -180,7 +181,7 @@ exports.getMessages = async (req, res, next) => {
     const { conversationId, username } = req.body;
     try {
         // Tìm cuộc hội thoại
-        const conversation = await Conversation.findById(conversationId);
+        const conversation = await Conveation.findById();
         if (!conversation) {
             return res.status(404).json({ message: "Cuộc hội thoại không tồn tại." });
         }
