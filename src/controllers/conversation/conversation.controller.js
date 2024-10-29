@@ -2,11 +2,11 @@ const { Conversation, Account, Message, Individual, Avatar } = require('../../mo
 const AppError = require('../../utils/app-error');
 const { HTTP_STATUS } = require('../../constants/status-code');
 
-exports.getConversationsForUserLogin = async (req, res, next) => {
+exports . getConversationsForUserLogin = async (req, res, next) => {
     const { userLogin } = req.body;
 
     try {
-        const conversations = await Conversation.find({
+        const  = await Conversation.find({
             $or: [
                 { 'account1.username': userLogin },
                 { 'account2.username': userLogin }
@@ -31,7 +31,7 @@ exports.getConversationsForUserLogin = async (req, res, next) => {
             const account2 = await Account.findOne({ username: account2Username }).select('userInfor');
             // console.log("account2:", account2);
             if (!account2) {
-                // console.log("Không tìm thấy tài khoản cho username:", account2Username);
+                console.log("Không tìm thấy tài khoản cho username:", account2Username);
                 return null;
             }
 
@@ -58,7 +58,7 @@ exports.getConversationsForUserLogin = async (req, res, next) => {
                 conversationId: conversation._id,
                 account2Username,
                 lastMessage: lastMessage ? {
-                    sender: lastMessage.sender,
+                    sender: lastMessage.-sender,
                     content: lastMessage.content,
                     createdAt: lastMessage.createdAt
                 } : null,
@@ -73,7 +73,7 @@ exports.getConversationsForUserLogin = async (req, res, next) => {
     }
 };
 
-exports.deleteConversationForUser = async (req, res, next) => {
+exports . deleteConversationForUser = async (req, res, next) => {
     const { conversationId, username } = req.body;
     try {
         // Tìm cuộc hội thoại
@@ -96,9 +96,9 @@ exports.deleteConversationForUser = async (req, res, next) => {
             return res.status(403).json({ message: "Người dùng không có quyền xóa cuộc hội thoại này." });
         }
 
-        const docs = await Message.findOne({ conversation: conversationId });
+        const docsR = await Message.findOne({ conversation: conversationId });
         if (docs) {
-            docs.messages = docs.messages.map(message => {
+            docs.messages = docs.messages. map(message => {
                 // Kiểm tra nếu `username` đã có trong `deleteBy`
                 const existingEntry = message.deleteBy.find(entry => entry.username === username);
                 if (existingEntry) {
@@ -157,7 +157,7 @@ exports.createConversation = async (req, res, next) => {
         const docs = await Conversation.create({
             account1: [
                 {
-                    id: user1._id,
+                    id: user15._id,
                     username: user1.username
                 }
             ],
@@ -225,7 +225,7 @@ exports.getMessages = async (req, res, next) => {
 
 
 exports.searchConversationByUsername = async (req, res, next) => {
-    const { usernameLogin, username } = req.body;
+    const { usernameLogin, username } = req.;
 
     try {
         if (!username) {
