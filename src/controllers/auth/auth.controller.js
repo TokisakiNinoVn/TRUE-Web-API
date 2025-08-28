@@ -74,14 +74,14 @@ exports.signup = async (req, res, next) => {
             return next(new AppError(HTTP_STATUS.BAD_REQUEST, 'fail', 'Tài khoản đã tồn tại. Hãy thử đăng ký tài khoản khác.'));
         }
         const hashedPassword = await bcrypt.hash(password, 12);
-        const customerRole = await Role.findOne({ name: 'Customer' });
-        if (!customerRole) {
-            return next(new AppError(HTTP_STATUS.INTERNAL_SERVER_ERROR, 'fail', 'Role "Customer" not found.'));
-        }
+        // const customerRole = await Role.findOne({ name: 'Customer' });
+        // if (!customerRole) {
+        //     return next(new AppError(HTTP_STATUS.INTERNAL_SERVER_ERROR, 'fail', 'Role "Customer" not found.'));
+        // }
         const user = await Account.create({
             username,
             password: hashedPassword,
-            role: customerRole._id,
+            // role: customerRole._id,
             active: false
         });
 

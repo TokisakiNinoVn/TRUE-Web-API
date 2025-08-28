@@ -1,11 +1,11 @@
 {
-  "name": "true-web-api",
+  "name": "trothainguyen-api",
   "version": "1.0.0",
   "description": "API cho web người dùng",
   "main": "src/index.js",
   "scripts": {
     "debug": "ndb src/server.js",
-    "api": "nodemon src/server.js",
+    "go": "nodemon src/server.js",
     "test": "mocha --timeout 10000"
   },
   "repository": {
